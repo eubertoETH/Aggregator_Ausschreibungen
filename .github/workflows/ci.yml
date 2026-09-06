@@ -4,16 +4,33 @@ on:
   pull_request:
   push:
     branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
+  changes:
+    name: Detect image changes
+    runs-on: ubuntu-latest
+    outputs:
+      image: ${{ steps.filter.outputs.image }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dorny/paths-filter@v4
+        id: filter
+        with:
+          filters: |
+            image:
+              - 'Code/**'
+              - 'Docker/Dockerfile'
+              - 'requirements.txt'
+
   validate:
     name: Test and validate Compose
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Run project tests
         run: make test
       - name: Validate Compose configuration
@@ -23,15 +40,18 @@ jobs:
 
   publish:
     name: Build and publish image
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: validate
+    if: >-
+      github.ref == 'refs/heads/main' &&
+      (github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'push' && needs.changes.outputs.image == 'true'))
+    needs: [changes, validate]
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
     steps:
-      - uses: actions/checkout@v4
-      - uses: docker/login-action@v3
+      - uses: actions/checkout@v5
+      - uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -39,7 +59,7 @@ jobs:
       - name: Derive lowercase image name
         id: image
         run: echo "name=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
-      - uses: docker/build-push-action@v6
+      - uses: docker/build-push-action@v7
         with:
           context: .
           file: Docker/Dockerfile
@@ -47,28 +67,30 @@ jobs:
           tags: |
             ${{ steps.image.outputs.name }}:${{ github.sha }}
             ${{ steps.image.outputs.name }}:latest
-
-  notify:
-    name: Notify Discord
-    if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: [validate, publish]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Send build result
+      - name: Notify Discord of image build result
+        if: ${{ always() }}
         env:
-          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_BUILD_WEBHOOK }}
-          VALIDATE_RESULT: ${{ needs.validate.result }}
-          PUBLISH_RESULT: ${{ needs.publish.result }}
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_BUILD_WEBHOOK }}
+          RESULT: ${{ job.status }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          COMMIT_SHA: ${{ github.sha }}
         run: |
-          if [[ "$VALIDATE_RESULT" == "success" && "$PUBLISH_RESULT" == "success" ]]; then
-            RESULT="✅ Aggregator build erfolgreich"
-          else
-            RESULT="❌ Aggregator build fehlgeschlagen"
+          if [ -z "$DISCORD_WEBHOOK" ]; then
+            echo "DISCORD_BUILD_WEBHOOK is not configured; skipping notification."
+            exit 0
           fi
-          payload=$(jq -nc --arg content "$RESULT\nCommit: \`$COMMIT_SHA\`\nRun: $RUN_URL" '{content: $content}')
+
+          if [ "$RESULT" = "success" ]; then
+            ICON="✅"
+            MESSAGE="Container image published: ghcr.io/eubertoeth/aggregator_ausschreibungen:${GITHUB_SHA} (and :latest)"
+          else
+            ICON="❌"
+            MESSAGE="Container image build or publish failed."
+          fi
+
+          payload="$(printf '%s\n%s\n%s\n' \
+            "${ICON} **aggregator image ${RESULT}**" "$MESSAGE" "$RUN_URL" \
+            | node -e 'let input=""; process.stdin.on("data", c => input += c).on("end", () => process.stdout.write(JSON.stringify({content: input})))')"
           curl --fail-with-body --silent --show-error \
             -H 'Content-Type: application/json' \
             --data "$payload" \
-            "$DISCORD_WEBHOOK_URL"
+            "$DISCORD_WEBHOOK"
