@@ -21,6 +21,12 @@ templates = Jinja2Templates(directory=BASE_DIR / "templates")
 @app.on_event("startup")
 def create_schema() -> None:
     Base.metadata.create_all(bind=engine)
+    # Lightweight forward migration for prototype deployments created before deadline fields.
+    with engine.begin() as connection:
+        connection.exec_driver_sql("ALTER TABLE notice ADD COLUMN IF NOT EXISTS submission_deadline TIMESTAMPTZ")
+        connection.exec_driver_sql("ALTER TABLE notice ADD COLUMN IF NOT EXISTS participation_deadline TIMESTAMPTZ")
+        connection.exec_driver_sql("CREATE INDEX IF NOT EXISTS ix_notice_submission_deadline ON notice (submission_deadline)")
+        connection.exec_driver_sql("CREATE INDEX IF NOT EXISTS ix_notice_participation_deadline ON notice (participation_deadline)")
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -42,7 +48,7 @@ def index(request: Request, q: str = "", tag: list[str] = Query(default=[]), cpv
             from datetime import timedelta
             query = query.filter(Notice.publication_date >= date.today() - timedelta(days=days))
         total = query.count()
-        notices = query.order_by(Notice.publication_date.desc()).offset((page - 1) * 50).limit(50).all()
+        notices = query.order_by(Notice.submission_deadline.asc().nullslast(), Notice.participation_deadline.asc().nullslast(), Notice.publication_date.desc()).offset((page - 1) * 50).limit(50).all()
         tags = [row[0] for row in session.query(Notice.tags).distinct().all() for row in (row[0] or [])]
         types = [row[0] for row in session.query(Notice.notice_type).distinct().order_by(Notice.notice_type).all() if row[0]]
     return templates.TemplateResponse(request, "index.html", {"notices": notices, "total": total, "tags": sorted(set(tags)), "types": types, "filters": {"q": q, "tag": tag, "cpv": cpv, "region": region, "notice_type": notice_type, "days": days}})

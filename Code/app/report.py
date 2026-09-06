@@ -14,7 +14,9 @@ def write_daily_report(days: int = DEFAULT_REPORT_DAYS) -> Path:
     lines = [f"# Ausschreibungsreport – {today.isoformat()}", "", f"Neue Bekanntmachungen der letzten {days} Tage: **{len(notices)}**", f"Planungs-/Bestands-/Sanierungs-/Fassaden-Treffer: **{len(relevant)}**", ""]
     for item in relevant:
         tags = f" · {', '.join(item.tags)}" if item.tags else ""
-        lines.extend([f"## {item.title or 'Ohne Titel'}", f"{item.buyer_name or 'Auftraggeber unbekannt'} · {item.city or item.nuts_region or 'Ort unbekannt'} · {item.publication_date}{tags}"])
+        closing = item.participation_deadline or item.submission_deadline
+        closing_text = f" · Frist: {closing.strftime('%d.%m.%Y %H:%M') if closing else 'nicht angegeben'}"
+        lines.extend([f"## {item.title or 'Ohne Titel'}", f"{item.buyer_name or 'Auftraggeber unbekannt'} · {item.city or item.nuts_region or 'Ort unbekannt'} · {item.publication_date}{tags}{closing_text}"])
         if item.notice_url:
             lines.append(f"[Bekanntmachung]({item.notice_url})")
         lines.append("")

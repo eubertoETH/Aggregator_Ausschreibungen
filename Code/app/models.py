@@ -48,6 +48,8 @@ class Notice(Base):
     tags: Mapped[list[str]] = mapped_column(ARRAY(String), default=list)
     estimated_value: Mapped[str | None] = mapped_column(String(64))
     currency: Mapped[str | None] = mapped_column(String(8))
+    submission_deadline: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
+    participation_deadline: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
     notice_url: Mapped[str | None] = mapped_column(String(512))
     raw_payload: Mapped[dict] = mapped_column(JSONB)
     search_vector: Mapped[str] = mapped_column(
