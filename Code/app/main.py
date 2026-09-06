@@ -16,6 +16,7 @@ BASE_DIR = Path(__file__).parent
 app = FastAPI(title="Ausschreibungsaggregator")
 app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
 templates = Jinja2Templates(directory=BASE_DIR / "templates")
+PROFILE_TAGS = ["architektur / planung", "bestand", "sanierung", "fassade", "energie"]
 
 
 @app.on_event("startup")
@@ -30,9 +31,11 @@ def create_schema() -> None:
 
 
 @app.get("/", response_class=HTMLResponse)
-def index(request: Request, q: str = "", tag: list[str] = Query(default=[]), cpv: str = "", region: str = "", notice_type: str = "", days: int = 30, page: int = 1):
+def index(request: Request, q: str = "", tag: list[str] = Query(default=[]), cpv: str = "", region: str = "", notice_type: str = "", scope: str = "profile", days: int = 30, page: int = 1):
     with SessionLocal() as session:
         query = session.query(Notice)
+        if scope == "profile":
+            query = query.filter(Notice.tags.overlap(PROFILE_TAGS))
         if q:
             needle = f"%{q}%"
             query = query.filter(or_(Notice.search_vector.op("@@")(func.websearch_to_tsquery("german", q)), Notice.buyer_name.ilike(needle), Notice.city.ilike(needle)))
@@ -51,7 +54,7 @@ def index(request: Request, q: str = "", tag: list[str] = Query(default=[]), cpv
         notices = query.order_by(Notice.submission_deadline.asc().nullslast(), Notice.participation_deadline.asc().nullslast(), Notice.publication_date.desc()).offset((page - 1) * 50).limit(50).all()
         tags = [row[0] for row in session.query(Notice.tags).distinct().all() for row in (row[0] or [])]
         types = [row[0] for row in session.query(Notice.notice_type).distinct().order_by(Notice.notice_type).all() if row[0]]
-    return templates.TemplateResponse(request, "index.html", {"notices": notices, "total": total, "tags": sorted(set(tags)), "types": types, "filters": {"q": q, "tag": tag, "cpv": cpv, "region": region, "notice_type": notice_type, "days": days}})
+    return templates.TemplateResponse(request, "index.html", {"notices": notices, "total": total, "tags": sorted(set(tags)), "types": types, "filters": {"q": q, "tag": tag, "cpv": cpv, "region": region, "notice_type": notice_type, "scope": scope, "days": days}})
 
 
 @app.get("/notices/{notice_id}", response_class=HTMLResponse)

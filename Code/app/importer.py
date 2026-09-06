@@ -23,6 +23,7 @@ KEYWORDS = {
     "fassade": ("fassade", "fassaden", "gebäudehülle", "hülle"),
     "energie": ("energetisch", "energieeffizienz", "wärmeschutz"),
 }
+PROFILE_CPV_PREFIXES = ("712", "7132", "714", "7153", "7154")
 
 
 def rows_from_zip(archive: bytes) -> dict[str, list[dict[str, str]]]:
@@ -74,9 +75,12 @@ def grouped(rows: list[dict[str, str]]) -> dict[tuple[str, str], list[dict[str, 
     return result
 
 
-def profile_tags(title: str, description: str) -> list[str]:
+def profile_tags(title: str, description: str, cpv_codes: list[str]) -> list[str]:
     haystack = f"{title} {description}".lower()
-    return [tag for tag, words in KEYWORDS.items() if any(word in haystack for word in words)]
+    tags = [tag for tag, words in KEYWORDS.items() if any(word in haystack for word in words)]
+    if any(code.startswith(PROFILE_CPV_PREFIXES) for code in cpv_codes):
+        tags.append("architektur / planung")
+    return tags
 
 
 def first(rows: list[dict[str, str]], key: str, default: str | None = None) -> str | None:
@@ -125,7 +129,7 @@ def import_day(import_day: date) -> int:
                 publication_date=date.fromisoformat(item["publicationDate"][:10]), notice_type=item.get("noticeType"), form_type=item.get("formType"),
                 title=title, description=description, buyer_name=first(orgs, "organisationName"), buyer_id=first(orgs, "organisationIdentifier"),
                 city=first(places, "placePerformanceCity"), nuts_region=first(places, "placePerformanceCountrySubdivision"), country_code=first(places, "placePerformanceCountryCode"),
-                procedure_type=first(procedures, "procedureType"), cpv_codes=sorted(set(cpvs)), tags=profile_tags(title or "", description or ""),
+                procedure_type=first(procedures, "procedureType"), cpv_codes=sorted(set(cpvs)), tags=profile_tags(title or "", description or "", cpvs),
                 estimated_value=value, currency=first(purposes, "estimatedValueCurrency"),
                 submission_deadline=metadata["submission_deadline"], participation_deadline=metadata["participation_deadline"],
                 notice_url=metadata["notice_url"], raw_payload=payload, imported_at=now,
