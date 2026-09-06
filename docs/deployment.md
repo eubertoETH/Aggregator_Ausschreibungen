@@ -1,29 +1,17 @@
 # Deployment
 
-`make deploy-package IMAGE_TAG=<commit-sha>` creates a release bundle with `compose.yaml`,
-`.env.example` and this document. The target host pulls the immutable image from GHCR.
+GitHub Actions runs tests, validates Compose, builds an immutable private GHCR image and publishes
+it with the commit SHA. The host has a checkout of this repository and deploys with `make deploy`.
 
-## Responsibility split
-
-GitHub Actions runs tests, validates Compose, builds the image and publishes its immutable
-commit tag to GHCR. It does **not** connect to the target host and there is no GitHub
-deployment password in this workflow. The host deliberately pulls and starts an approved tag.
-
-## GitHub
-
-1. Push the reviewed commit to `main`.
-2. Wait for the GitHub Actions run to succeed; its commit SHA is the `IMAGE_TAG`.
-3. Create the release bundle with that SHA and transfer it to the host.
-
-GitHub Actions uses the automatic `GITHUB_TOKEN` to publish the image. No manually managed
-repository secret is required for the current build/publish workflow.
-
-1. Install Docker Engine plus Docker Compose on the host. Copy the generated archive to the
-   host and unpack it.
-2. Copy `.env.example` to `.env`. Set `IMAGE_TAG` and a unique `POSTGRES_PASSWORD`.
-   The same password must appear in `DATABASE_URL`; do this only on the host.
-3. If GHCR is private, authenticate Docker to `ghcr.io` on the host.
-4. Run `docker compose pull && docker compose up -d`.
+1. Install Docker Engine, Docker Compose and Git on the host. Clone the private repository.
+2. Create the adjacent host-owned directory `<repository>-host/` and copy
+   `deploy/.env.example` to `<repository>-host/.env`.
+3. Create the non-empty file configured by `POSTGRES_PASSWORD_HOST_FILE` (for example
+   `<repository>-host/secrets/postgres_password`) through the host's protected secret mechanism.
+4. Set `AGGREGATOR_IMAGE` in the host `.env` to the approved immutable GHCR commit tag.
+5. Authenticate Docker on the host for read access to private GHCR images.
+6. Run `make deploy` in the repository checkout. It syncs the checkout with `git pull --ff-only`,
+   validates the host configuration and secret path, pulls images and recreates only app/scheduler.
 
 The application binds to `127.0.0.1:8080` by default. Keep it private or put an authenticated
 reverse proxy in front of it before exposing it externally; the prototype currently has no
@@ -31,16 +19,11 @@ application login.
 
 ## Credentials
 
-- **PostgreSQL password:** required, but only for the app/scheduler-to-database connection
-  inside Compose. PostgreSQL has no published host port.
-- **GHCR read access:** only needed on the host when the container package is private; this is
-  Docker's registry credential, not an application credential.
+- **PostgreSQL password:** host-owned secret file; mounted as a Docker secret into PostgreSQL,
+  app and scheduler. PostgreSQL has no published host port.
+- **GHCR read access:** Docker registry credential on the host because the package is private.
 - **DÖE:** no credential required. The current prototype has no LLM, mail, SharePoint or other
   external-service credential.
-- **Automated GitHub-to-host deployment:** not configured. It would require a separate,
-  narrowly scoped host-access mechanism (for example a deploy key or a self-hosted runner) and
-  an explicit decision to enable automatic deployment.
 
-Only `.env` and, if needed, Docker's registry credential are host-specific. They are ignored by
-Git and excluded from the bundle. Docker named volumes retain PostgreSQL, raw exports and reports
-across container updates.
+The host `.env`, secret file and Docker registry credential never enter Git. Docker named volumes
+retain PostgreSQL, raw exports and reports across deployments.

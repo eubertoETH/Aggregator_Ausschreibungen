@@ -35,9 +35,9 @@ Markdown-Report. `POST /reports/daily` kann ihn zusätzlich manuell erzeugen.
 
 ## Deployment
 
-Das Release-Bundle entsteht mit `make deploy-package IMAGE_TAG=<commit-sha>`.
-Es enthält die Produktions-Compose-Datei und die Konfigurationsvorlage; das Image
-wird auf dem Zielhost aus GHCR gepullt. Details stehen in `docs/deployment.md`.
+Auf dem Zielhost führt `make deploy` den bestehenden Git-sync-, Preflight- und
+GHCR-Pull-Flow aus. Host-Konfiguration und Secrets liegen bewusst neben dem
+Repository, nicht darin. Details stehen in `docs/deployment.md`.
 
 ## Delivery
 
