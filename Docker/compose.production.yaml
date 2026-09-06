@@ -1,3 +1,5 @@
+name: aggregator-ausschreibungen
+
 services:
   app:
     image: ${AGGREGATOR_IMAGE:?Set AGGREGATOR_IMAGE in the host .env}

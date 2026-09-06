@@ -1,7 +1,8 @@
 # Deployment
 
-GitHub Actions runs tests, validates Compose, builds an immutable private GHCR image and publishes
-it with the commit SHA. The host has a checkout of this repository and deploys with `make deploy`.
+GitHub Actions runs tests, validates Compose, builds a private GHCR image and publishes it with the
+commit SHA and `latest`. `latest` is updated only by successful builds from `main`. The host has a
+checkout of this repository and deploys with `make deploy`.
 
 1. Install Docker Engine, Docker Compose and Git on the host. Create a sparse checkout containing
    only `Makefile`, `Docker/` and `deploy/`; the application source is inside the pulled image and
@@ -19,7 +20,8 @@ it with the commit SHA. The host has a checkout of this repository and deploys w
    `deploy/.env.example` to `<repository>-host/.env`.
 3. Create the non-empty file configured by `POSTGRES_PASSWORD_HOST_FILE` (for example
    `<repository>-host/secrets/postgres_password`) through the host's protected secret mechanism.
-4. Set `AGGREGATOR_IMAGE` in the host `.env` to the approved immutable GHCR commit tag.
+4. Leave `AGGREGATOR_IMAGE` on `:latest` in the host `.env` to deploy the newest successfully
+   published `main` image. Use an immutable commit tag only for an intentional rollback.
 5. Authenticate Docker on the host for read access to private GHCR images. This credential belongs
    to Docker's credential store for the host user running `make deploy`, never to the project `.env`.
 6. Run `make deploy` in the repository checkout. It syncs the checkout with `git pull --ff-only`,
@@ -35,7 +37,7 @@ Success means that the Docker credential for the current host user has read acce
 authentication failure means the normal host-level GHCR login needs to be configured first; it is
 not a project setting and must not be added to `.env`.
 
-The application binds to `127.0.0.1:8080` by default. Keep it private or put an authenticated
+The application binds to `127.0.0.1:18080` by default. Keep it private or put an authenticated
 reverse proxy in front of it before exposing it externally; the prototype currently has no
 application login.
 
