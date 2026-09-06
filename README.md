@@ -33,13 +33,15 @@ zwei vorherigen Tage erneut ein. Das Upsert über Quelle, Bekanntmachungs-ID und
 Version macht diese Wiederholung idempotent. Anschließend erstellt er den
 Markdown-Report. `POST /reports/daily` kann ihn zusätzlich manuell erzeugen.
 
+## Deployment
+
+Das Release-Bundle entsteht mit `make deploy-package IMAGE_TAG=<commit-sha>`.
+Es enthält die Produktions-Compose-Datei und die Konfigurationsvorlage; das Image
+wird auf dem Zielhost aus GHCR gepullt. Details stehen in `docs/deployment.md`.
+
 ## Delivery
 
 - Pull Requests prüfen Tests und die Compose-Konfiguration.
-- Pushes nach `main` bauen ein Image und veröffentlichen es als `ghcr.io/<owner>/<repo>:<commit-sha>`.
-- Das Deployment erfolgt bewusst kontrolliert auf dem Zielsystem:
-```bash
-docker compose -f Docker/compose.yaml pull
-docker compose -f Docker/compose.yaml up -d
-```
-Secrets gehören ausschließlich in die Laufzeitumgebung des Zielsystems, nie ins Repository oder Image.
+- Pushes nach `main` bauen ein Image und veröffentlichen es als `ghcr.io/eubertoeth/aggregator_ausschreibungen:<commit-sha>`.
+- Das Zielsystem erhält ausschließlich das Release-Bundle; dort läuft `docker compose pull && docker compose up -d`.
+- Die host-spezifische `.env` (PostgreSQL-Passwort, Port und Image-Tag) gehört nie ins Repository oder Image.
