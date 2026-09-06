@@ -4,7 +4,7 @@ services:
     environment:
       DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL in .env}
     ports:
-      - "${SERVICE_PORT:-8080}:8080"
+      - "${SERVICE_BIND:-127.0.0.1}:${SERVICE_PORT:-8080}:8080"
     volumes:
       - aggregator_data:/data
     depends_on:
