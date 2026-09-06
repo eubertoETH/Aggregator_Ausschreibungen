@@ -3,7 +3,7 @@ services:
     build:
       context: ..
       dockerfile: Docker/Dockerfile
-    image: ghcr.io/${GITHUB_REPOSITORY:-local/aggregator-ausschreibungen}:local
+    image: ghcr.io/eubertoeth/aggregator_ausschreibungen:local
     env_file:
       - ../.env
     ports:
