@@ -47,3 +47,28 @@ jobs:
           tags: |
             ${{ steps.image.outputs.name }}:${{ github.sha }}
             ${{ steps.image.outputs.name }}:latest
+
+  notify:
+    name: Notify Discord
+    if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [validate, publish]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send build result
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_BUILD_WEBHOOK }}
+          VALIDATE_RESULT: ${{ needs.validate.result }}
+          PUBLISH_RESULT: ${{ needs.publish.result }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          COMMIT_SHA: ${{ github.sha }}
+        run: |
+          if [[ "$VALIDATE_RESULT" == "success" && "$PUBLISH_RESULT" == "success" ]]; then
+            RESULT="✅ Aggregator build erfolgreich"
+          else
+            RESULT="❌ Aggregator build fehlgeschlagen"
+          fi
+          payload=$(jq -nc --arg content "$RESULT\nCommit: \`$COMMIT_SHA\`\nRun: $RUN_URL" '{content: $content}')
+          curl --fail-with-body --silent --show-error \
+            -H 'Content-Type: application/json' \
+            --data "$payload" \
+            "$DISCORD_WEBHOOK_URL"
