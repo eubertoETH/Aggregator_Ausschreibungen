@@ -9,7 +9,7 @@ it with the commit SHA. The host has a checkout of this repository and deploys w
 
    ```bash
    cd /opt/docker
-   git clone --filter=blob:none --no-checkout git@github.com:eubertoETH/Aggregator_Ausschreibungen.git aggregator-ausschreibungen
+   git clone --filter=blob:none --no-checkout https://github.com/eubertoETH/Aggregator_Ausschreibungen.git aggregator-ausschreibungen
    cd aggregator-ausschreibungen
    git sparse-checkout init --cone
    git sparse-checkout set Docker deploy Makefile
