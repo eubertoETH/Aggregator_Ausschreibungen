@@ -1,0 +1,1 @@
+"""Ausschreibungsaggregator application."""

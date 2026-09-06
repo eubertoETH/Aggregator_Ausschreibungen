@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
 set -eu
 
-# Replace this placeholder with project-specific tests.
-test -d Code
-printf '%s\n' 'Template checks passed.'
+python3 -m compileall -q Code
+test -f requirements.txt
+printf '%s\n' 'Application syntax checks passed.'
