@@ -1,6 +1,17 @@
 from logging.config import fileConfig
+from pathlib import Path
+import sys
 
 from alembic import context
+
+# The development checkout keeps the application below ``Code/`` while the
+# production image copies that directory's contents directly to ``/app``.
+# Make the migration runner independent from that packaging detail.
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+for app_root in (PROJECT_ROOT / "Code", PROJECT_ROOT):
+    if (app_root / "app").is_dir():
+        sys.path.insert(0, str(app_root))
+        break
 
 from app.database import Base, DATABASE_URL
 from app import models  # noqa: F401 - register all model metadata
