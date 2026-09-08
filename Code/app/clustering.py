@@ -18,7 +18,7 @@ def _procedure_key(procedure_identifier: str) -> str:
     return f"procedure:{procedure_identifier.strip().lower()}"
 
 
-def assign_notice_cluster(session: Session, notice_id: int, procedure_identifier: str | None) -> None:
+def assign_notice_cluster(session: Session, notice_id: int, procedure_identifier: str | None, source_code: str | None = None) -> None:
     """Attach a source notice to its exact procedure cluster or safe singleton."""
     now = datetime.now(timezone.utc)
     procedure_identifier = procedure_identifier.strip() if procedure_identifier else None
@@ -36,6 +36,7 @@ def assign_notice_cluster(session: Session, notice_id: int, procedure_identifier
         session.flush()
 
     member = session.scalar(select(NoticeClusterMember).where(NoticeClusterMember.notice_id == notice_id))
+    provenance = {field: source_code for field in ("title", "description", "buyer_name", "city", "nuts_region", "cpv_codes", "deadlines", "notice_url") if source_code}
     if member is None:
         session.add(
             NoticeClusterMember(
@@ -44,7 +45,7 @@ def assign_notice_cluster(session: Session, notice_id: int, procedure_identifier
                 match_method="exact-procedure" if procedure_identifier else "source-singleton",
                 match_confidence="high" if procedure_identifier else "not-applicable",
                 match_rule_version=EXACT_PROCEDURE_RULE,
-                field_provenance={},
+                field_provenance=provenance,
                 created_at=now,
             )
         )
@@ -55,3 +56,5 @@ def assign_notice_cluster(session: Session, notice_id: int, procedure_identifier
         member.match_method = "exact-procedure"
         member.match_confidence = "high"
         member.match_rule_version = EXACT_PROCEDURE_RULE
+    if provenance:
+        member.field_provenance = provenance

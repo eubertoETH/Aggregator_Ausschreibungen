@@ -1,8 +1,7 @@
 # TED + DÖE — Feldanalyse und Connector-Vertrag
 
 **Stand: 2026-09-08.** Diese Spezifikation dokumentiert die validierte
-Vorarbeit für die TED-Anbindung. Sie schaltet noch keinen produktiven
-TED-Import ein.
+Vorarbeit und den produktiven Connector-Vertrag für die TED-Anbindung.
 
 ## Manuelle Referenzprobe
 

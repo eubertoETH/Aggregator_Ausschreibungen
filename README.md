@@ -1,8 +1,9 @@
 # Ausschreibungsaggregator
 
-Sammelt Bekanntmachungen des Datenservice Öffentlicher Einkauf (DÖE), speichert
-Rohdaten und normalisierte Metadaten in PostgreSQL und stellt eine filterbare
-Übersicht bereit. Der erste Schnitt verwendet keine LLMs.
+Sammelt Bekanntmachungen des Datenservice Öffentlicher Einkauf (DÖE) und TED,
+speichert Rohdaten und normalisierte Metadaten in PostgreSQL und stellt eine
+filterbare Übersicht pro Vergabeverfahren bereit. Der erste Schnitt verwendet
+keine LLMs.
 
 ## Schnellstart
 ```bash
@@ -15,7 +16,7 @@ make import-today
 make report
 ```
 
-Die Anwendung liegt in `Code/`, Laufzeitdateien in `Docker/` und verbindliche Projektdokumentation in `docs/specs/`.
+Die Anwendung liegt in `Code/`, Laufzeitdateien in `Docker/` und verbindliche Projektdokumentation in `docs/specs/`. Alembic führt vor App und Scheduler kontrollierte Datenmigrationen aus.
 
 ## Filter
 
@@ -27,9 +28,10 @@ sowie CPV- und Tag-Arrays mit GIN-Indizes. Die Fachbegriffe liegen zentral in
 
 ## Betrieb
 
-Der Import-Endpunkt akzeptiert ein Datum: `POST /imports/YYYY-MM-DD`. Der
-mitgelieferte Scheduler läuft täglich um 02:15 Uhr und liest den Vortag plus die
-zwei vorherigen Tage erneut ein. Das Upsert über Quelle, Bekanntmachungs-ID und
+Die Import-Endpunkte akzeptieren ein Datum: `POST /imports/YYYY-MM-DD` für
+DÖE und `POST /imports/ted/YYYY-MM-DD` für TED. Der mitgelieferte Scheduler
+läuft täglich um 02:15 Uhr und liest für beide Quellen den Vortag plus die zwei
+vorherigen Tage erneut ein. Das Upsert über Quelle, Bekanntmachungs-ID und
 Version macht diese Wiederholung idempotent. Anschließend erstellt er den
 Markdown-Report. `POST /reports/daily` kann ihn zusätzlich manuell erzeugen.
 

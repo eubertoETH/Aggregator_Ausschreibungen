@@ -25,6 +25,8 @@ jobs:
               - 'Code/**'
               - 'Docker/Dockerfile'
               - 'requirements.txt'
+              - 'alembic.ini'
+              - 'migrations/**'
 
   validate:
     name: Test and validate Compose

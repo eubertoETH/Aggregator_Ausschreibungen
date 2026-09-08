@@ -55,9 +55,9 @@ def deadline(period: ElementTree.Element) -> datetime | None:
 
 def eforms_metadata(xml: str | None) -> dict[str, datetime | str | None]:
     if not xml:
-        return {"submission_deadline": None, "participation_deadline": None, "notice_url": None, "procedure_identifier": None}
+        return {"submission_deadline": None, "participation_deadline": None, "notice_url": None, "procedure_identifier": None, "version": None}
     root = ElementTree.fromstring(xml)
-    metadata: dict[str, datetime | str | None] = {"submission_deadline": None, "participation_deadline": None, "notice_url": None, "procedure_identifier": None}
+    metadata: dict[str, datetime | str | None] = {"submission_deadline": None, "participation_deadline": None, "notice_url": None, "procedure_identifier": None, "version": None}
     for element in root.iter():
         name = local_name(element)
         if name == "TenderSubmissionDeadlinePeriod":
@@ -68,6 +68,8 @@ def eforms_metadata(xml: str | None) -> dict[str, datetime | str | None]:
             metadata["notice_url"] = next((child.text.strip() for child in element.iter() if local_name(child) == "URI" and child.text), None)
         elif name == "ContractFolderID" and not metadata["procedure_identifier"] and element.text:
             metadata["procedure_identifier"] = element.text.strip()
+        elif name == "VersionID" and not metadata["version"] and element.text:
+            metadata["version"] = element.text.strip()
     return metadata
 
 
@@ -140,6 +142,6 @@ def import_day(import_day: date) -> int:
             notice_id = session.execute(insert(Notice).values(**notice_values).on_conflict_do_update(
                 constraint="uq_notice_version", set_={name: value for name, value in notice_values.items() if name not in {"source_code", "publication_number", "version"}}
             ).returning(Notice.id)).scalar_one()
-            assign_notice_cluster(session, notice_id, metadata["procedure_identifier"])
+            assign_notice_cluster(session, notice_id, metadata["procedure_identifier"], source_code="doe")
         session.query(Source).filter_by(code="doe").update({"last_successful_fetch": now})
     return len(notices)

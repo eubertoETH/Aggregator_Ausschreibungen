@@ -13,7 +13,7 @@ services:
     volumes:
       - aggregator_data:/data
     depends_on:
-      migrate:
+      backfill:
         condition: service_completed_successfully
       db:
         condition: service_healthy
@@ -34,6 +34,20 @@ services:
     restart: "no"
     secrets:
       - postgres_password
+  backfill:
+    image: ${AGGREGATOR_IMAGE:?Set AGGREGATOR_IMAGE in the host .env}
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+    command: ["python", "-m", "app.backfill", "--source", "doe"]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    restart: "no"
+    secrets:
+      - postgres_password
   scheduler:
     image: ${AGGREGATOR_IMAGE:?Set AGGREGATOR_IMAGE in the host .env}
     environment:
@@ -45,7 +59,7 @@ services:
     volumes:
       - aggregator_data:/data
     depends_on:
-      migrate:
+      backfill:
         condition: service_completed_successfully
       db:
         condition: service_healthy

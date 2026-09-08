@@ -5,16 +5,23 @@ from datetime import date, datetime, timedelta
 
 from .importer import import_day
 from .report import write_daily_report
+from .ted_importer import import_ted_day
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 
 
 def run_once() -> None:
-    # Re-read three completed export days: late corrections are safe due to versioned upserts.
     yesterday = date.today() - timedelta(days=1)
-    for offset in range(3):
-        imported = import_day(yesterday - timedelta(days=offset))
-        logging.info("Imported %s notices for %s", imported, yesterday - timedelta(days=offset))
+    # Each source remains operationally independent. A TED outage must not
+    # suppress the German DÖE feed or its report.
+    for source_name, import_day_for_source in (("DÖE", import_day), ("TED", import_ted_day)):
+        try:
+            for offset in range(3):
+                target_day = yesterday - timedelta(days=offset)
+                imported = import_day_for_source(target_day)
+                logging.info("%s imported %s notices for %s", source_name, imported, target_day)
+        except Exception:
+            logging.exception("%s import failed; continuing with remaining sources", source_name)
     logging.info("Wrote report: %s", write_daily_report())
 
 

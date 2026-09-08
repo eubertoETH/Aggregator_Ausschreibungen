@@ -11,7 +11,7 @@ services:
     volumes:
       - aggregator_data:/data
     depends_on:
-      migrate:
+      backfill:
         condition: service_completed_successfully
       db:
         condition: service_healthy
@@ -26,6 +26,17 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    restart: "no"
+  backfill:
+    build:
+      context: ..
+      dockerfile: Docker/Dockerfile
+    env_file:
+      - ../.env
+    command: ["python", "-m", "app.backfill", "--source", "doe"]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
     restart: "no"
   db:
     image: postgres:17-alpine
@@ -51,7 +62,7 @@ services:
     volumes:
       - aggregator_data:/data
     depends_on:
-      migrate:
+      backfill:
         condition: service_completed_successfully
       db:
         condition: service_healthy
