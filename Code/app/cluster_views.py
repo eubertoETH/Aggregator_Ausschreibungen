@@ -55,6 +55,18 @@ class ClusterView:
     @property
     def tags(self): return sorted({tag for notice in self.notices for tag in (notice.tags or [])})
     @property
+    def service_categories(self): return sorted({code for notice in self.notices for code in (notice.service_categories or [])})
+    @property
+    def object_types(self): return sorted({code for notice in self.notices for code in (notice.object_types or [])})
+    @property
+    def classification_reasons(self):
+        result = {}
+        for notice in self._ordered():
+            result.update(notice.classification_reasons or {})
+        return result
+    @property
+    def procedure_identifier(self): return self._value("procedure_identifier") or self.cluster.procedure_identifier
+    @property
     def source_codes(self): return sorted({notice.source_code for notice in self.notices})
     @property
     def source_links(self):

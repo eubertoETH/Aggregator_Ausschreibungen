@@ -1,7 +1,7 @@
 # Filteranforderungen – Büroprofil und räumliche Relevanz
 
-**Status:** fachliche Spezifikation, noch keine Implementierung  
-**Stand:** 2026-09-07  
+**Status:** erste Produktionsstufe implementiert
+**Stand:** 2026-09-08
 **Grundlage:** Büroprofil (alle Leistungsphasen; Schwerpunkt Bauen im Bestand,
 Sanierung und Fassade) sowie die vorliegenden competitionline-Screenshots zur
 Leistungsart.
@@ -19,14 +19,12 @@ verwerfen, sondern soll die tägliche Sichtung verkleinern.
 |---|---|
 | Referenzstandort | Olgastraße 69d, Stuttgart-Mitte |
 | Raumfilter | konfigurierbarer Radius in Kilometern vom Referenzstandort |
-| Eingabe | Radius-Auswahl (z. B. 25, 50, 100, 200 km; „bundesweit“) |
+| Eingabe | Radius-Auswahl 25, 50, 75, 100 oder 150 km; Standard 75 km |
 | Bezugspunkt | Erfüllungsort des Projekts, nie nur der Sitz des Auftraggebers |
 | Ergebnis bei ungenauem Ort | Kennzeichnung `Ort ungenau`; nicht stillschweigend ausschließen |
 
-Die konkrete Voreinstellung für den Radius ist noch offen. Für die erste
-Bewertung wird ein Radius von 100 km als sinnvoller Startwert vorgeschlagen;
-er umfasst Stuttgart und die relevante nähere Region, ohne automatisch ganz
-Deutschland einzubeziehen.
+Die erste Stufe ist bewusst ein sichtbarer NUTS-Vorfilter: Er bewahrt mögliche
+Treffer, berechnet aber ohne Ortskoordinaten keine erfundene exakte Entfernung.
 
 ## 3. Objektart
 
@@ -154,7 +152,7 @@ erreichbar**:
 - Ein Kilometer-Radius ist erst belastbar, wenn der Erfüllungsort geocodiert
   wird. Bis dahin ist NUTS/Stadt eine grobe, transparente Zwischenlösung.
 
-## 8. Abnahmekriterien für eine spätere Umsetzung
+## 8. Implementierungsstand und Abnahmekriterien
 
 1. Nutzer kann Radius, Objektart und Leistungsarten unabhängig kombinieren.
 2. Jeder Treffer zeigt die Gründe seiner Vorauswahl (CPV, Textsignal,
@@ -163,4 +161,8 @@ erreichbar**:
    unbemerkt ausgeschlossen.
 4. „Alle DÖE-Bekanntmachungen“ bleibt als Kontrollansicht verfügbar.
 5. Die Klassifikationsregeln sind in Konfiguration versioniert, nicht im
-   Frontend versteckt.
+Frontend versteckt.
+
+Ergänzt umgesetzt: Quellenfilter (DÖE/TED/beide), Suche nach Verfahrens- und
+Veröffentlichungs-ID, hierarchisch mehrfach aufklappbare Leistungsarten,
+Mischprojekte sowie Seitenwahl oberhalb und unterhalb der Tabelle.

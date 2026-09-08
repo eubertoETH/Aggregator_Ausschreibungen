@@ -16,6 +16,7 @@ from .clustering import assign_notice_cluster
 from .database import SessionLocal
 from .models import Notice, RawNotice, Source
 from .settings import RAW_ARCHIVE_DIR
+from .taxonomy import classify
 
 DOE_EXPORT = "https://oeffentlichevergabe.de/api/notice-exports?pubDay={day}&format={format}"
 KEYWORDS = {
@@ -129,12 +130,14 @@ def import_day(import_day: date) -> int:
                 constraint="uq_raw_notice_version", set_={"fetched_at": now, "payload": payload, "payload_hash": digest}
             ))
             value = first(purposes, "estimatedValue")
+            services, objects, reasons = classify(title, description, cpvs)
             notice_values = dict(
                 source_code="doe", publication_number=key[0], version=key[1], procedure_identifier=metadata["procedure_identifier"],
                 publication_date=date.fromisoformat(item["publicationDate"][:10]), notice_type=item.get("noticeType"), form_type=item.get("formType"),
                 title=title, description=description, buyer_name=first(orgs, "organisationName"), buyer_id=first(orgs, "organisationIdentifier"),
                 city=first(places, "placePerformanceCity"), nuts_region=first(places, "placePerformanceCountrySubdivision"), country_code=first(places, "placePerformanceCountryCode"),
                 procedure_type=first(procedures, "procedureType"), cpv_codes=sorted(set(cpvs)), tags=profile_tags(title or "", description or "", cpvs),
+                service_categories=services, object_types=objects, classification_reasons=reasons,
                 estimated_value=value, currency=first(purposes, "estimatedValueCurrency"),
                 submission_deadline=metadata["submission_deadline"], participation_deadline=metadata["participation_deadline"],
                 notice_url=metadata["notice_url"], raw_payload=payload, imported_at=now,

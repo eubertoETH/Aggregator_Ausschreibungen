@@ -49,6 +49,9 @@ class Notice(Base):
     procedure_type: Mapped[str | None] = mapped_column(String(64), index=True)
     cpv_codes: Mapped[list[str]] = mapped_column(ARRAY(String), default=list)
     tags: Mapped[list[str]] = mapped_column(ARRAY(String), default=list)
+    service_categories: Mapped[list[str]] = mapped_column(ARRAY(String), default=list)
+    object_types: Mapped[list[str]] = mapped_column(ARRAY(String), default=list)
+    classification_reasons: Mapped[dict] = mapped_column(JSONB, default=dict)
     estimated_value: Mapped[str | None] = mapped_column(String(64))
     currency: Mapped[str | None] = mapped_column(String(8))
     submission_deadline: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
@@ -65,6 +68,8 @@ class Notice(Base):
         Index("ix_notice_search", "publication_date", "notice_type", "nuts_region"),
         Index("ix_notice_cpv_gin", "cpv_codes", postgresql_using="gin"),
         Index("ix_notice_tags_gin", "tags", postgresql_using="gin"),
+        Index("ix_notice_service_categories_gin", "service_categories", postgresql_using="gin"),
+        Index("ix_notice_object_types_gin", "object_types", postgresql_using="gin"),
         Index("ix_notice_text_gin", "search_vector", postgresql_using="gin"),
     )
 

@@ -41,7 +41,7 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
-    command: ["python", "-m", "app.backfill", "--source", "doe"]
+    command: ["python", "-m", "app.backfill", "--source", "all"]
     depends_on:
       migrate:
         condition: service_completed_successfully

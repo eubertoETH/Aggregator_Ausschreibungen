@@ -20,6 +20,7 @@ from .database import SessionLocal
 from .importer import eforms_metadata, local_name, profile_tags
 from .models import Notice, RawNotice, Source
 from .settings import RAW_ARCHIVE_DIR, TED_COUNTRY_CODE
+from .taxonomy import classify
 
 TED_SEARCH_URL = "https://api.ted.europa.eu/v3/notices/search"
 TED_FIELDS = [
@@ -152,6 +153,7 @@ def import_ted_day(import_day: date) -> int:
                 constraint="uq_raw_notice_version", set_={"fetched_at": now, "payload": payload, "payload_hash": digest}
             ))
             title, description, cpvs = fields["title"] or "", fields["description"] or "", fields["cpv_codes"]
+            services, objects, reasons = classify(title, description, cpvs)
             notice_values = dict(
                 source_code="ted", publication_number=publication_number, version=version,
                 procedure_identifier=fields["procedure_identifier"], publication_date=import_day,
@@ -159,7 +161,8 @@ def import_ted_day(import_day: date) -> int:
                 title=title, description=description, buyer_name=fields["buyer_name"], buyer_id=fields["buyer_id"],
                 city=fields["city"], nuts_region=fields["nuts_region"], country_code=fields["country_code"],
                 procedure_type=fields["procedure_type"], cpv_codes=cpvs,
-                tags=profile_tags(title, description, cpvs), estimated_value=fields["estimated_value"], currency=fields["currency"],
+                tags=profile_tags(title, description, cpvs), service_categories=services, object_types=objects, classification_reasons=reasons,
+                estimated_value=fields["estimated_value"], currency=fields["currency"],
                 submission_deadline=fields["submission_deadline"], participation_deadline=fields["participation_deadline"],
                 notice_url=fields["notice_url"], raw_payload=payload, imported_at=now,
             )
