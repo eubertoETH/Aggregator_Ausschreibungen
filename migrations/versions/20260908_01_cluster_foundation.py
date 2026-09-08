@@ -6,6 +6,7 @@ Create Date: 2026-09-08
 """
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy.dialects import postgresql
 
 
 revision = "20260908_01"
@@ -64,7 +65,7 @@ def upgrade() -> None:
             sa.Column("match_method", sa.String(length=64), nullable=False),
             sa.Column("match_confidence", sa.String(length=16), nullable=False),
             sa.Column("match_rule_version", sa.String(length=32), nullable=False),
-            sa.Column("field_provenance", sa.dialects.postgresql.JSONB(), nullable=False),
+            sa.Column("field_provenance", postgresql.JSONB(), nullable=False),
             sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
         )
         op.create_index("ix_notice_cluster_member_cluster_id", "notice_cluster_member", ["cluster_id"])
