@@ -12,6 +12,7 @@ from xml.etree import ElementTree
 
 from sqlalchemy.dialects.postgresql import insert
 
+from .clustering import assign_notice_cluster
 from .database import SessionLocal
 from .models import Notice, RawNotice, Source
 from .settings import RAW_ARCHIVE_DIR
@@ -54,9 +55,9 @@ def deadline(period: ElementTree.Element) -> datetime | None:
 
 def eforms_metadata(xml: str | None) -> dict[str, datetime | str | None]:
     if not xml:
-        return {"submission_deadline": None, "participation_deadline": None, "notice_url": None}
+        return {"submission_deadline": None, "participation_deadline": None, "notice_url": None, "procedure_identifier": None}
     root = ElementTree.fromstring(xml)
-    metadata: dict[str, datetime | str | None] = {"submission_deadline": None, "participation_deadline": None, "notice_url": None}
+    metadata: dict[str, datetime | str | None] = {"submission_deadline": None, "participation_deadline": None, "notice_url": None, "procedure_identifier": None}
     for element in root.iter():
         name = local_name(element)
         if name == "TenderSubmissionDeadlinePeriod":
@@ -65,6 +66,8 @@ def eforms_metadata(xml: str | None) -> dict[str, datetime | str | None]:
             metadata["participation_deadline"] = deadline(element)
         elif name == "CallForTendersDocumentReference" and not metadata["notice_url"]:
             metadata["notice_url"] = next((child.text.strip() for child in element.iter() if local_name(child) == "URI" and child.text), None)
+        elif name == "ContractFolderID" and not metadata["procedure_identifier"] and element.text:
+            metadata["procedure_identifier"] = element.text.strip()
     return metadata
 
 
@@ -125,7 +128,7 @@ def import_day(import_day: date) -> int:
             ))
             value = first(purposes, "estimatedValue")
             notice_values = dict(
-                source_code="doe", publication_number=key[0], version=key[1],
+                source_code="doe", publication_number=key[0], version=key[1], procedure_identifier=metadata["procedure_identifier"],
                 publication_date=date.fromisoformat(item["publicationDate"][:10]), notice_type=item.get("noticeType"), form_type=item.get("formType"),
                 title=title, description=description, buyer_name=first(orgs, "organisationName"), buyer_id=first(orgs, "organisationIdentifier"),
                 city=first(places, "placePerformanceCity"), nuts_region=first(places, "placePerformanceCountrySubdivision"), country_code=first(places, "placePerformanceCountryCode"),
@@ -134,8 +137,9 @@ def import_day(import_day: date) -> int:
                 submission_deadline=metadata["submission_deadline"], participation_deadline=metadata["participation_deadline"],
                 notice_url=metadata["notice_url"], raw_payload=payload, imported_at=now,
             )
-            session.execute(insert(Notice).values(**notice_values).on_conflict_do_update(
+            notice_id = session.execute(insert(Notice).values(**notice_values).on_conflict_do_update(
                 constraint="uq_notice_version", set_={name: value for name, value in notice_values.items() if name not in {"source_code", "publication_number", "version"}}
-            ))
+            ).returning(Notice.id)).scalar_one()
+            assign_notice_cluster(session, notice_id, metadata["procedure_identifier"])
         session.query(Source).filter_by(code="doe").update({"last_successful_fetch": now})
     return len(notices)

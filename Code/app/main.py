@@ -7,7 +7,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import func, or_
 
-from .database import Base, SessionLocal, engine
+from .database import SessionLocal
 from .importer import import_day
 from .models import Notice
 from .report import write_daily_report
@@ -17,17 +17,6 @@ app = FastAPI(title="Ausschreibungsaggregator")
 app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
 templates = Jinja2Templates(directory=BASE_DIR / "templates")
 PROFILE_TAGS = ["architektur / planung", "bestand", "sanierung", "fassade", "energie"]
-
-
-@app.on_event("startup")
-def create_schema() -> None:
-    Base.metadata.create_all(bind=engine)
-    # Lightweight forward migration for prototype deployments created before deadline fields.
-    with engine.begin() as connection:
-        connection.exec_driver_sql("ALTER TABLE notice ADD COLUMN IF NOT EXISTS submission_deadline TIMESTAMPTZ")
-        connection.exec_driver_sql("ALTER TABLE notice ADD COLUMN IF NOT EXISTS participation_deadline TIMESTAMPTZ")
-        connection.exec_driver_sql("CREATE INDEX IF NOT EXISTS ix_notice_submission_deadline ON notice (submission_deadline)")
-        connection.exec_driver_sql("CREATE INDEX IF NOT EXISTS ix_notice_participation_deadline ON notice (participation_deadline)")
 
 
 @app.get("/", response_class=HTMLResponse)

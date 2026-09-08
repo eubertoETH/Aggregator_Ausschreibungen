@@ -11,9 +11,22 @@ services:
     volumes:
       - aggregator_data:/data
     depends_on:
+      migrate:
+        condition: service_completed_successfully
       db:
         condition: service_healthy
     restart: unless-stopped
+  migrate:
+    build:
+      context: ..
+      dockerfile: Docker/Dockerfile
+    env_file:
+      - ../.env
+    command: ["alembic", "upgrade", "head"]
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
   db:
     image: postgres:17-alpine
     environment:
@@ -38,6 +51,8 @@ services:
     volumes:
       - aggregator_data:/data
     depends_on:
+      migrate:
+        condition: service_completed_successfully
       db:
         condition: service_healthy
     restart: unless-stopped

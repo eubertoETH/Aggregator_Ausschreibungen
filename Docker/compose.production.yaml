@@ -13,9 +13,25 @@ services:
     volumes:
       - aggregator_data:/data
     depends_on:
+      migrate:
+        condition: service_completed_successfully
       db:
         condition: service_healthy
     restart: unless-stopped
+    secrets:
+      - postgres_password
+  migrate:
+    image: ${AGGREGATOR_IMAGE:?Set AGGREGATOR_IMAGE in the host .env}
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+    command: ["alembic", "upgrade", "head"]
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
     secrets:
       - postgres_password
   scheduler:
@@ -29,6 +45,8 @@ services:
     volumes:
       - aggregator_data:/data
     depends_on:
+      migrate:
+        condition: service_completed_successfully
       db:
         condition: service_healthy
     restart: unless-stopped
