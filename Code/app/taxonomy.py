@@ -108,3 +108,7 @@ def classify(title: str | None, description: str | None, cpv_codes: Iterable[str
 
 def taxonomy_for_template() -> list[dict]:
     return [{"code": code, "label": label, "children": [{"code": leaf[0], "label": leaf[1]} for leaf in leaves]} for code, label, leaves in SERVICE_GROUPS]
+
+
+def service_labels() -> dict[str, str]:
+    return {leaf[0]: leaf[1] for _group, _label, leaves in SERVICE_GROUPS for leaf in leaves}

@@ -14,7 +14,7 @@ from .geo import RADIUS_KM, matches_nuts_radius
 from .importer import import_day
 from .models import Notice, NoticeCluster, NoticeClusterMember
 from .report import write_daily_report
-from .taxonomy import CORE_SERVICE_CODES, taxonomy_for_template
+from .taxonomy import CORE_SERVICE_CODES, service_labels, taxonomy_for_template
 from .ted_importer import import_ted_day
 
 BASE_DIR = Path(__file__).parent
@@ -89,7 +89,7 @@ def index(
             params.extend((key, value) for value in filters[key])
         return "?" + urlencode(params)
     return templates.TemplateResponse(request, "index.html", {
-        "notices": notices, "total": total, "types": types, "filters": filters, "taxonomy": taxonomy_for_template(),
+        "notices": notices, "total": total, "types": types, "filters": filters, "taxonomy": taxonomy_for_template(), "service_labels": service_labels(),
         "pagination": {"page": page, "page_count": page_count, "previous_url": page_url(page - 1) if page > 1 else None, "next_url": page_url(page + 1) if page < page_count else None, "links": [(number, page_url(number)) if number else (None, None) for number in _page_links(page, page_count)], "from": (page - 1) * page_size + 1 if total else 0, "to": min(page * page_size, total)},
     })
 
