@@ -166,3 +166,8 @@ Frontend versteckt.
 Ergänzt umgesetzt: Quellenfilter (DÖE/TED/beide), Suche nach Verfahrens- und
 Veröffentlichungs-ID, hierarchisch mehrfach aufklappbare Leistungsarten,
 Mischprojekte sowie Seitenwahl oberhalb und unterhalb der Tabelle.
+
+Die Desktop-Ansicht besitzt getrennte Scrollbereiche: Filter und Trefferliste
+scrollen unabhängig, während der Seitenkopf stehen bleibt. Die Auswahl der
+Trefferzahl ist direkt in beiden Pagination-Leisten erreichbar; Filter bleiben
+beim Wechsel erhalten. Auf Mobilgeräten bleibt der normale Seiten-Scroll aktiv.
