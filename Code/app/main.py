@@ -88,8 +88,39 @@ def index(
         for key in ("service", "object_type", "source"):
             params.extend((key, value) for value in filters[key])
         return "?" + urlencode(params)
+    def without_filter(key: str, value: str | None = None) -> str:
+        updated = {name: items[:] if isinstance(items, list) else items for name, items in filters.items()}
+        if value is not None:
+            updated[key] = [item for item in updated[key] if item != value]
+        elif key == "radius":
+            updated[key] = 0
+        elif key == "days":
+            updated[key] = 0
+        elif key == "scope":
+            updated[key] = "all"
+        elif key == "source_mode":
+            updated[key] = "any"
+        else:
+            updated[key] = ""
+        params = [(name, str(item)) for name, item in updated.items() if name not in {"service", "object_type", "source"}]
+        params.append(("page", "1"))
+        for name in ("service", "object_type", "source"):
+            params.extend((name, item) for item in updated[name])
+        return "?" + urlencode(params)
+    object_labels = {"existing": "Bestand", "new_build": "Neubau", "mixed": "Mischprojekt"}
+    active_filters: list[dict[str, str]] = []
+    if q: active_filters.append({"label": f"Suche: {q}", "url": without_filter("q")})
+    if scope == "profile": active_filters.append({"label": "Profiltreffer", "url": without_filter("scope")})
+    if days: active_filters.append({"label": f"Zeitraum: {days} Tage", "url": without_filter("days")})
+    if radius: active_filters.append({"label": f"Radius: {radius} km", "url": without_filter("radius")})
+    for key, label in (("cpv", "CPV"), ("region", "NUTS"), ("notice_type", "Verfahren")):
+        if filters[key]: active_filters.append({"label": f"{label}: {filters[key]}", "url": without_filter(key)})
+    for item in service: active_filters.append({"label": service_labels().get(item, item), "url": without_filter("service", item)})
+    for item in object_type: active_filters.append({"label": object_labels.get(item, item), "url": without_filter("object_type", item)})
+    for item in source: active_filters.append({"label": item.upper(), "url": without_filter("source", item)})
+    if source_mode == "both": active_filters.append({"label": "Nur DÖE + TED", "url": without_filter("source_mode")})
     return templates.TemplateResponse(request, "index.html", {
-        "notices": notices, "total": total, "types": types, "filters": filters, "taxonomy": taxonomy_for_template(), "service_labels": service_labels(),
+        "notices": notices, "total": total, "types": types, "filters": filters, "taxonomy": taxonomy_for_template(), "service_labels": service_labels(), "active_filters": active_filters,
         "pagination": {"page": page, "page_count": page_count, "previous_url": page_url(page - 1) if page > 1 else None, "next_url": page_url(page + 1) if page < page_count else None, "links": [(number, page_url(number)) if number else (None, None) for number in _page_links(page, page_count)], "from": (page - 1) * page_size + 1 if total else 0, "to": min(page * page_size, total)},
     })
 

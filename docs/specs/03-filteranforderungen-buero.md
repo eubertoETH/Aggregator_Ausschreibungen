@@ -171,3 +171,7 @@ Die Desktop-Ansicht besitzt getrennte Scrollbereiche: Filter und Trefferliste
 scrollen unabhängig, während der Seitenkopf stehen bleibt. Die Auswahl der
 Trefferzahl ist direkt in beiden Pagination-Leisten erreichbar; Filter bleiben
 beim Wechsel erhalten. Auf Mobilgeräten bleibt der normale Seiten-Scroll aktiv.
+
+Unterhalb der Filtergruppen zeigt die GUI alle tatsächlich aktiven Filter als
+entfernbare Badges. Das Entfernen eines Badges setzt nur dessen Filter zurück
+und behält alle übrigen Auswahlwerte bei.
