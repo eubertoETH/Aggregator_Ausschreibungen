@@ -175,3 +175,14 @@ beim Wechsel erhalten. Auf Mobilgeräten bleibt der normale Seiten-Scroll aktiv.
 Unterhalb der Filtergruppen zeigt die GUI alle tatsächlich aktiven Filter als
 entfernbare Badges. Das Entfernen eines Badges setzt nur dessen Filter zurück
 und behält alle übrigen Auswahlwerte bei.
+# Ergänzung: Arbeitsansicht
+
+- **Veröffentlicht seit** ersetzt die Bezeichnung „Zeitraum“ und nutzt weiter
+  die Werte alle Daten, 7, 30 und 90 Tage (Standard: 30 Tage).
+- **Status der Ausschreibung** ist mehrfach wählbar. Standard: mehr als 7
+  Tage und noch 1–7 Tage; abgelaufen und entschieden sind opt-in.
+- **Verfahrensart / Unterschwelle** darf nur auf expliziten Quellensignalen
+  beruhen.
+- **Merkliste:** globales Lesezeichen mit optionaler Notiz und Schnellfilter.
+- Ergebniszeilen zeigen Ort, Veröffentlichungsdatum, Auftraggeber,
+  Leistungsarten, Quellen, Abgabetermin, Friststatus und Lesezeichen.

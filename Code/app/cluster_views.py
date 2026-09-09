@@ -3,6 +3,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 
 from .models import Notice, NoticeCluster
+from .workflow import deadline_status, is_below_threshold
 
 SOURCE_PRIORITY = {"doe": 0, "ted": 1}
 
@@ -66,6 +67,16 @@ class ClusterView:
         return result
     @property
     def procedure_identifier(self): return self._value("procedure_identifier") or self.cluster.procedure_identifier
+    @property
+    def deadline(self): return self.participation_deadline or self.submission_deadline
+    @property
+    def status(self): return deadline_status(self.deadline, [(notice.notice_type or "") + " " + (notice.form_type or "") for notice in self.notices])
+    @property
+    def is_below_threshold(self): return is_below_threshold([(notice.notice_type or "") + " " + (notice.form_type or "") for notice in self.notices])
+    @property
+    def bookmarked(self): return self.cluster.bookmarked_at is not None
+    @property
+    def bookmark_note(self): return self.cluster.bookmark_note
     @property
     def source_codes(self): return sorted({notice.source_code for notice in self.notices})
     @property

@@ -85,6 +85,8 @@ class NoticeCluster(Base):
     procedure_identifier: Mapped[str | None] = mapped_column(String(128), index=True)
     match_rule_version: Mapped[str] = mapped_column(String(32), default="exact-procedure-v1")
     conflict_status: Mapped[str] = mapped_column(String(32), default="none")
+    bookmarked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
+    bookmark_note: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     __table_args__ = (
         Index(
