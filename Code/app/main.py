@@ -96,12 +96,21 @@ def index(
         types = [row[0] for row in session.query(Notice.notice_type).distinct().order_by(Notice.notice_type).all() if row[0]]
 
     filters = {"q": q, "service": service, "object_type": object_type, "source": source, "source_mode": source_mode, "cpv": cpv, "region": region, "notice_type": notice_type, "scope": scope, "days": days, "radius": radius, "status": active_statuses, "status_configured": True, "bookmarked": bookmarked, "below_threshold": below_threshold, "page_size": page_size}
-    def page_url(target: int) -> str:
-        params = [(key, str(value).lower() if isinstance(value, bool) else str(value)) for key, value in filters.items() if key not in {"service", "object_type", "source", "status"}]
+    list_values = {"service", "object_type", "source", "status"}
+
+    def filters_url(updated: dict, target: int = 1) -> str:
+        params = [
+            (key, str(value).lower() if isinstance(value, bool) else str(value))
+            for key, value in updated.items() if key not in list_values
+        ]
         params.append(("page", str(target)))
-        for key in ("service", "object_type", "source", "status"):
-            params.extend((key, value) for value in filters[key])
+        for key in list_values:
+            params.extend((key, value) for value in updated[key])
         return "?" + urlencode(params)
+
+    def page_url(target: int) -> str:
+        return filters_url(filters, target)
+
     def without_filter(key: str, value: str | None = None) -> str:
         updated = {name: items[:] if isinstance(items, list) else items for name, items in filters.items()}
         if value is not None:
@@ -118,11 +127,7 @@ def index(
             updated[key] = False
         else:
             updated[key] = ""
-        params = [(name, str(item).lower() if isinstance(item, bool) else str(item)) for name, item in updated.items() if name not in {"service", "object_type", "source", "status"}]
-        params.append(("page", "1"))
-        for name in ("service", "object_type", "source", "status"):
-            params.extend((name, item) for item in updated[name])
-        return "?" + urlencode(params)
+        return filters_url(updated)
     object_labels = {"existing": "Bestand", "new_build": "Neubau", "mixed": "Mischprojekt"}
     active_filters: list[dict[str, str]] = []
     if q: active_filters.append({"label": f"Suche: {q}", "url": without_filter("q")})
@@ -142,6 +147,7 @@ def index(
     return templates.TemplateResponse(request, "index.html", {
         "notices": notices, "total": total, "types": types, "filters": filters, "taxonomy": taxonomy_for_template(), "service_labels": service_labels(), "active_filters": active_filters,
         "status_labels": STATUS_LABELS, "status_counts": status_counts, "bookmark_count": bookmark_count,
+        "bookmark_toggle_url": filters_url({**filters, "bookmarked": not bookmarked}),
         "return_to": request.url.path + (f"?{request.url.query}" if request.url.query else ""),
         "pagination": {"page": page, "page_count": page_count, "previous_url": page_url(page - 1) if page > 1 else None, "next_url": page_url(page + 1) if page < page_count else None, "links": [(number, page_url(number)) if number else (None, None) for number in _page_links(page, page_count)], "from": (page - 1) * page_size + 1 if total else 0, "to": min(page * page_size, total)},
     })

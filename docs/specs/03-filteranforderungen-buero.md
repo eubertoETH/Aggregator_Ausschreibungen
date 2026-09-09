@@ -186,3 +186,8 @@ und behält alle übrigen Auswahlwerte bei.
 - **Merkliste:** globales Lesezeichen mit optionaler Notiz und Schnellfilter.
 - Ergebniszeilen zeigen Ort, Veröffentlichungsdatum, Auftraggeber,
   Leistungsarten, Quellen, Abgabetermin, Friststatus und Lesezeichen.
+- Die Ergebnisdarstellung ist eine flache, aufklappbare Liste statt einzelner
+  Cards. Das Lesezeichen ist in der Zeile ein Icon; Notizen bleiben im Detail.
+- CPV, NUTS, Quellen und Verfahrensfilter liegen gemeinsam im einklappbaren
+  Bereich **Weitere Filter**. Der Radius zeigt keine technische Vorfilter-
+  Erklärung in der Bedienoberfläche.
